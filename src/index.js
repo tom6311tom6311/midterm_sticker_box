@@ -13,8 +13,9 @@ if (isDevMode) enableLiveReload({ strategy: 'react-hmr' });
 const createWindow = async () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 600,
+    height: 750,
+    resizable: false,
   });
 
   // and load the index.html of the app.
@@ -23,7 +24,7 @@ const createWindow = async () => {
   // Open the DevTools.
   if (isDevMode) {
     await installExtension(REACT_DEVELOPER_TOOLS);
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools({ mode: 'undocked' });
   }
 
   // Emitted when the window is closed.
