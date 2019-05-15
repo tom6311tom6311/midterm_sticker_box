@@ -1,16 +1,7 @@
-import fs from 'fs';
 import React from 'react';
+import PropTypes from 'prop-types';
 import GridList from 'material-ui/GridList';
 import GridListTile from 'material-ui/GridList/GridTile';
-
-const tileData = fs.readdirSync('src/data/stickers/')
-  .filter(name => name.endsWith('.png') || name.endsWith('.jpg' || name.endsWith('.gif')))
-  .map(name => ({
-    img: `data/stickers/${name}`,
-    title: name,
-    cols: 1,
-  }))
-  .slice(0, 9);
 
 const styles = {
   root: {
@@ -27,16 +18,32 @@ const styles = {
   },
 };
 
-const ImageGridList = () => (
+const ImageGridList = ({ tileData, onImageLoaded }) => (
   <div style={styles.root}>
     <GridList cellHeight={190} spacing={2} style={styles.gridList} cols={3}>
       {tileData.map(tile => (
         <GridListTile key={tile.img} cols={tile.cols || 1}>
-          <img src={tile.img} alt={tile.title} />
+          <img className={'grabbable'} src={tile.img} alt={tile.title} onLoad={onImageLoaded} />
         </GridListTile>
       ))}
     </GridList>
   </div>
 );
+
+ImageGridList.propTypes = {
+  tileData: PropTypes.arrayOf(
+    PropTypes.shape({
+      img: PropTypes.string.isRequired,
+      title: PropTypes.string,
+      cols: PropTypes.number,
+    }),
+  ),
+  onImageLoaded: PropTypes.func,
+};
+
+ImageGridList.defaultProps = {
+  tileData: [],
+  onImageLoaded: () => {},
+};
 
 export default ImageGridList;
