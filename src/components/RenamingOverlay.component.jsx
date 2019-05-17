@@ -1,43 +1,34 @@
+
 import React from 'react';
 import PropTypes from 'prop-types';
-
-import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
 const styles = {
-  toolbar: {
-    backgroundColor: '#4285f4',
-    width: '100%',
-    height: '20%',
-  },
-  toolbarGroup: {
-    width: '100%',
-  },
   textField: {
-    width: '80%',
-    height: '40%',
-    fontSize: '32px',
-    lineHeight: '32px',
+    width: '70%',
+    marginRight: '5%',
+    fontSize: '20px',
+    lineHeight: '20px',
   },
   underline: {
-    borderColor: 'white',
+    borderColor: 'grey',
   },
   hint: {
-    color: 'white',
+    color: 'grey',
   },
   input: {
-    color: 'white',
+    color: 'grey',
   },
 };
 
-const SearchBar = ({ onChange, onSubmit }) => (
-  <Toolbar style={styles.toolbar}>
-    <ToolbarGroup style={styles.toolbarGroup}>
+const RenamingOverlay = ({ onChange, onSubmit }) => (
+  <div className="overlay-wrapper">
+    <div className="overlay overlay--input">
       <TextField
         style={styles.textField}
         inputStyle={styles.input}
-        hintText={'請輸入關鍵字...'}
+        hintText={'請用一句話描述這張貼圖...'}
         underlineStyle={styles.underline}
         underlineFocusStyle={styles.underline}
         hintStyle={styles.hint}
@@ -45,20 +36,20 @@ const SearchBar = ({ onChange, onSubmit }) => (
         onKeyPress={({ key }) => { if (key === 'Enter') onSubmit(); }}
       />
       <RaisedButton size={'large'} onClick={onSubmit}>
-        搜尋
+        上傳
       </RaisedButton>
-    </ToolbarGroup>
-  </Toolbar>
+    </div>
+  </div>
 );
 
-SearchBar.propTypes = {
+RenamingOverlay.propTypes = {
   onChange: PropTypes.func,
   onSubmit: PropTypes.func,
 };
 
-SearchBar.defaultProps = {
+RenamingOverlay.defaultProps = {
   onChange: () => {},
   onSubmit: () => {},
 };
 
-export default SearchBar;
+export default RenamingOverlay;
