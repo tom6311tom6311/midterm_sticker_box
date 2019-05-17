@@ -37,6 +37,17 @@ class Main extends Component {
     if (this.loadTimeout !== undefined) {
       clearTimeout(this.loadTimeout);
     }
+    this.setLoadTimeout();
+  }
+
+  onSearchTermChanged({ target: { value: searchTerm } }) {
+    this.setState(prevState => ({
+      ...prevState,
+      searchTerm,
+    }));
+  }
+
+  setLoadTimeout() {
     this.loadTimeout = setTimeout(() => {
       this.setState(prevState => ({
         ...prevState,
@@ -45,28 +56,20 @@ class Main extends Component {
     }, AppConfig.LOAD_TIMEOUT);
   }
 
-  onSearchTermChanged({ target: { value: searchTerm } }) {
-    this.setState(prevState => ({
-      ...prevState,
-      searchTerm,
-    }));
-    console.log(searchTerm);
-  }
-
   makeQuery() {
     this.setState(prevState => ({
       ...prevState,
       isDisconnected: false,
       isLoading: true,
     }));
+    this.setLoadTimeout();
     timeoutTask(
       // eslint-disable-next-line no-undef
-      fetch(`${AppConfig.SERVER_URL}/img_list?searchTerm=${this.state.searchTerm}`),
+      fetch(`${AppConfig.SERVER_URL}/imgs?searchTerm=${this.state.searchTerm}`),
       AppConfig.CONN_TIMEOUT,
     )
       .then(res => res.json())
       .then(({ imgList }) => {
-        console.log('lala');
         this.setState(prevState => ({
           ...prevState,
           tileData: imgList.map(name => ({
