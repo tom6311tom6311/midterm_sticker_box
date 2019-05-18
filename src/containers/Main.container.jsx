@@ -28,6 +28,7 @@ class Main extends Component {
       searchTerm: '',
       uploadFileName: '',
       tileData: [],
+      copyrightAgree: false,
     };
 
     this.loadTimeout = undefined;
@@ -37,13 +38,15 @@ class Main extends Component {
     this.onImageLoaded = this.onImageLoaded.bind(this);
     this.onSearchTermChanged = this.onSearchTermChanged.bind(this);
     this.onUploadFileNameChanged = this.onUploadFileNameChanged.bind(this);
+    this.onCopyrightCheckboxChanged = this.onCopyrightCheckboxChanged.bind(this);
     this.onFileDroppedIn = this.onFileDroppedIn.bind(this);
     this.setLoadTimeout = this.setLoadTimeout.bind(this);
     this.makeQuery = this.makeQuery.bind(this);
-    this.verifyName = this.verifyName.bind(this);
+    this.verifyNameAndCopyright = this.verifyNameAndCopyright.bind(this);
     this.compressImage = this.compressImage.bind(this);
     this.uploadImage = this.uploadImage.bind(this);
     this.showInfo = this.showInfo.bind(this);
+    this.exitOverlay = this.exitOverlay.bind(this);
   }
 
   componentDidMount() {
@@ -71,6 +74,13 @@ class Main extends Component {
     }));
   }
 
+  onCopyrightCheckboxChanged({ target: { checked: copyrightAgree } }) {
+    this.setState(prevState => ({
+      ...prevState,
+      copyrightAgree,
+    }));
+  }
+
   onFileDroppedIn(files) {
     let errorMessage = '';
     try {
@@ -94,6 +104,8 @@ class Main extends Component {
       this.setState(prevState => ({
         ...prevState,
         appStatus: AppConfig.APP_STATUS.READY,
+        uploadFileName: '',
+        copyrightAgree: false,
       }));
     }, AppConfig.LOAD_TIMEOUT);
   }
@@ -123,7 +135,7 @@ class Main extends Component {
       });
   }
 
-  verifyName() {
+  verifyNameAndCopyright() {
     let errorMessage = '';
     try {
       verifyFileName(this.state.uploadFileName);
@@ -131,6 +143,10 @@ class Main extends Component {
       console.error(err);
       errorMessage = err.message;
       this.showInfo(`檔名有問題：${errorMessage}`, true);
+    }
+    if (!this.state.copyrightAgree) {
+      errorMessage = 'COPYRIGHT_NOT_AGREE';
+      this.showInfo('您必須確保沒版權問題才能上傳', true);
     }
     if (errorMessage === '') {
       this.compressImage();
@@ -187,11 +203,13 @@ class Main extends Component {
     )
       .then(res => res.json())
       .then(({ status }) => {
+        this.setState(prevState => ({
+          ...prevState,
+          appStatus: AppConfig.APP_STATUS.READY,
+          uploadFileName: '',
+          copyrightAgree: false,
+        }));
         if (status === 'OK') {
-          this.setState(prevState => ({
-            ...prevState,
-            appStatus: AppConfig.APP_STATUS.READY,
-          }));
           this.showInfo('檔案上傳成功！', false);
         } else {
           this.showInfo('檔案上傳失敗', true);
@@ -222,6 +240,15 @@ class Main extends Component {
     }, AppConfig.INFO_TIMEOUT);
   }
 
+  exitOverlay() {
+    this.setState(prevState => ({
+      ...prevState,
+      appStatus: AppConfig.APP_STATUS.READY,
+      uploadFileName: '',
+      copyrightAgree: false,
+    }));
+  }
+
   render() {
     const { appStatus, infoText, isErrorInfo, tileData } = this.state;
     return (
@@ -232,7 +259,16 @@ class Main extends Component {
             onSubmit={this.makeQuery}
           />
           { appStatus === AppConfig.APP_STATUS.LOADING ? <LoadingOverlay /> : '' }
-          { appStatus === AppConfig.APP_STATUS.RENAMING ? <RenamingOverlay onChange={this.onUploadFileNameChanged} onSubmit={this.verifyName} /> : '' }
+          {
+            appStatus === AppConfig.APP_STATUS.RENAMING ?
+              <RenamingOverlay
+                onNameChange={this.onUploadFileNameChanged}
+                onCheckboxChange={this.onCopyrightCheckboxChanged}
+                onSubmit={this.verifyNameAndCopyright}
+                onExit={this.exitOverlay}
+              /> :
+              ''
+          }
           <InfoBand infoText={infoText} isError={isErrorInfo} />
           <Dropzone onDrop={this.onFileDroppedIn}>
             <ImageGridList

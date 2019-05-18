@@ -23,7 +23,12 @@ const ImageGridList = ({ tileData, onImageLoaded }) => (
     <GridList cellHeight={190} spacing={2} style={styles.gridList} cols={3}>
       {tileData.map(tile => (
         <GridListTile key={tile.img} cols={tile.cols || 1}>
-          <img className={'grabbable'} src={tile.img} alt={tile.title} onLoad={onImageLoaded} />
+          <img
+            className={'grabbable'}
+            src={tile.img}
+            alt={tile.title}
+            onLoad={onImageLoaded}
+          />
         </GridListTile>
       ))}
     </GridList>

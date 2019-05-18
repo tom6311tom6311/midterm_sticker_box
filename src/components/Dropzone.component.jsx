@@ -42,7 +42,7 @@ class Dropzone extends Component {
     e.preventDefault();
     e.stopPropagation();
     this.dragCounter += 1;
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+    if (e.dataTransfer.items && e.dataTransfer.items.length === 1) {
       this.setState({
         dragging: true,
       });
@@ -63,11 +63,11 @@ class Dropzone extends Component {
   handleDrop(e) {
     e.preventDefault();
     e.stopPropagation();
+    this.dragCounter = 0;
     this.setState({ dragging: false });
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       this.props.onDrop(e.dataTransfer.files);
       e.dataTransfer.clearData();
-      this.dragCounter = 0;
     }
   }
 

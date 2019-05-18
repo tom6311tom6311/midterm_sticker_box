@@ -81,13 +81,30 @@ html, body {
   width: 70%;
 }
 
+.overlay--check {
+  left:15%;
+  top:54%;
+  width: 70%;
+}
+
 .overlay-text {
   position:absolute;
   font-size:9px;
   font-family:Arial;
   color:#BBB;
   letter-spacing:1px;
-  font-weight:700
+  font-weight:700;
+}
+
+.overlay--check-text {
+  position:absolute;
+  display: inline-block;
+  font-size:16px;
+  line-height: 25px;
+  font-family:Arial;
+  color:#999;
+  letter-spacing:1px;
+  font-weight:700;
 }
 
 .overlay-text--spinner {
@@ -101,6 +118,34 @@ html, body {
   top:48%;
   font-size:20px;
 }
+
+.overlay-close {
+  position: absolute;
+  right: 32px;
+  top: 32px;
+  width: 32px;
+  height: 32px;
+  opacity: 0.3;
+}
+.overlay-close:hover {
+  opacity: 1;
+}
+.overlay-close:before, .overlay-close:after {
+  position: absolute;
+  left: 15px;
+  content: ' ';
+  height: 33px;
+  width: 2px;
+  background-color: #333;
+}
+.overlay-close:before {
+  transform: rotate(45deg);
+}
+.overlay-close:after {
+  transform: rotate(-45deg);
+}
+
+
 
 @-webkit-keyframes spin {
   0%,100% {-webkit-transform:rotate(0deg) scale(1)}
