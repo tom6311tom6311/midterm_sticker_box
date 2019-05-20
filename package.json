@@ -29,7 +29,8 @@
         ]
       },
       "electronPackagerConfig": {
-        "packageManager": "npm"
+        "packageManager": "npm",
+        "icon": "src/assets/icon/sticker_box_icon.icns"
       },
       "electronWinstallerConfig": {
         "name": "midterm_sticker_box"
