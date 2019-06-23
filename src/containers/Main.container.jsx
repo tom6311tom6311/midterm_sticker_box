@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import Compressor from 'compressorjs';
+import PropTypes from 'prop-types';
+import { ApolloClient } from 'apollo-boost';
+import IMG_SEARCH_QUERY from '../graphql/imgSearch.query.js';
 import SearchBar from '../components/SearchBar.component';
 import LoadingOverlay from '../components/LoadingOverlay.component';
 import RenamingOverlay from '../components/RenamingOverlay.component';
@@ -116,15 +119,20 @@ class Main extends Component {
       appStatus: AppConfig.APP_STATUS.LOADING,
     }));
     this.setLoadTimeout();
-    // eslint-disable-next-line no-undef
-    fetch(`${AppConfig.SERVER_URL}/imgs?searchTerm=${this.state.searchTerm}`)
-      .then(res => res.json())
-      .then(({ imgList }) => {
+    const { apolloClient } = this.props;
+    apolloClient
+      .query({
+        query: IMG_SEARCH_QUERY,
+        variables: {
+          searchTerm: this.state.searchTerm,
+        },
+      })
+      .then(({ data: { imgSearch: stickerList } }) => {
         this.setState(prevState => ({
           ...prevState,
-          tileData: imgList.map(name => ({
-            img: `${AppConfig.SERVER_URL}/imgs/${name}`,
-            title: name,
+          tileData: stickerList.map(({ stickerID, type, description }) => ({
+            img: `${AppConfig.SERVER_URL.HTTP}/imgs/${stickerID}.${type}`,
+            title: description,
             cols: 1,
           })),
         }));
@@ -281,5 +289,13 @@ class Main extends Component {
     );
   }
 }
+
+Main.propTypes = {
+  apolloClient: PropTypes.instanceOf(ApolloClient),
+};
+
+Main.defaultProps = {
+  apolloClient: {},
+};
 
 export default Main;

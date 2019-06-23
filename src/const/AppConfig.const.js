@@ -1,5 +1,8 @@
 const AppConfig = {
-  SERVER_URL: 'http://localhost:5000',
+  SERVER_URL: {
+    HTTP: 'http://localhost:4000',
+    WS: 'ws://localhost:4000',
+  },
   LOAD_TIMEOUT: 1000, // ms
   INFO_TIMEOUT: 2000, // ms
   ALLOWED_MEDIA_TYPE: ['image/jpeg', 'image/png', 'image/gif'],
