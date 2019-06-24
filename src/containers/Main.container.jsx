@@ -4,6 +4,8 @@ import Compressor from 'compressorjs';
 import PropTypes from 'prop-types';
 import { ApolloClient } from 'apollo-boost';
 import IMG_SEARCH_QUERY from '../graphql/imgSearch.query.js';
+import LoginOverlay from '../components/LoginOverlay.component';
+import RegisterOverlay from '../components/RegisterOverlay.component';
 import SearchBar from '../components/SearchBar.component';
 import LoadingOverlay from '../components/LoadingOverlay.component';
 import RenamingOverlay from '../components/RenamingOverlay.component';
@@ -13,6 +15,8 @@ import AppConfig from '../const/AppConfig.const';
 import Dropzone from '../components/Dropzone.component';
 import verifyImageFile from '../util/verifyImageFile.func';
 import verifyFileName from '../util/verifyFileName.func';
+import LOGIN_MUTATION from '../graphql/login.mutation.js';
+import REGISTER_MUTATION from '../graphql/register.mutation';
 
 const mainContainerStyle = {
   height: '100%',
@@ -25,7 +29,8 @@ class Main extends Component {
   constructor() {
     super();
     this.state = {
-      appStatus: AppConfig.APP_STATUS.LOADING,
+      appStatus: AppConfig.APP_STATUS.LOGIN,
+      userID: '',
       infoText: '',
       isErrorInfo: false,
       searchTerm: '',
@@ -38,6 +43,10 @@ class Main extends Component {
     this.infoTimeout = undefined;
     this.uploadFile = {};
 
+    this.onLogin = this.onLogin.bind(this);
+    this.onRegister = this.onRegister.bind(this);
+    this.onSwitchToRegister = this.onSwitchToRegister.bind(this);
+    this.onSwitchToLogin = this.onSwitchToLogin.bind(this);
     this.onImageLoaded = this.onImageLoaded.bind(this);
     this.onSearchTermChanged = this.onSearchTermChanged.bind(this);
     this.onUploadFileNameChanged = this.onUploadFileNameChanged.bind(this);
@@ -53,7 +62,78 @@ class Main extends Component {
   }
 
   componentDidMount() {
-    this.makeQuery();
+    // this.makeQuery();
+  }
+
+  onLogin(userID, password) {
+    const { apolloClient } = this.props;
+    apolloClient
+      .mutate({
+        mutation: LOGIN_MUTATION,
+        variables: {
+          arg: {
+            userID,
+            password,
+          },
+        },
+      })
+      .then(({ data: { login: { success, message } } }) => {
+        if (success) {
+          this.setState(prevState => ({
+            ...prevState,
+            userID,
+          }));
+          this.makeQuery();
+        } else {
+          this.showInfo(message, true);
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        this.showInfo('網路連不上', true);
+      });
+  }
+
+  onRegister(userID, name, password) {
+    const { apolloClient } = this.props;
+    apolloClient
+    .mutate({
+      mutation: REGISTER_MUTATION,
+      variables: {
+        userID,
+        name,
+        password,
+      },
+    })
+    .then(({ data: { success, message } }) => {
+      if (success) {
+        this.setState(prevState => ({
+          ...prevState,
+          userID,
+        }));
+        this.makeQuery();
+      } else {
+        this.showInfo(message, true);
+      }
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+      this.showInfo('網路連不上', true);
+    });
+  }
+
+  onSwitchToRegister() {
+    this.setState(prevState => ({
+      ...prevState,
+      appStatus: AppConfig.APP_STATUS.REGISTER,
+    }));
+  }
+
+  onSwitchToLogin() {
+    this.setState(prevState => ({
+      ...prevState,
+      appStatus: AppConfig.APP_STATUS.LOGIN,
+    }));
   }
 
   onImageLoaded() {
@@ -262,6 +342,8 @@ class Main extends Component {
     return (
       <MuiThemeProvider>
         <div style={mainContainerStyle}>
+          { appStatus === AppConfig.APP_STATUS.LOGIN ? <LoginOverlay onLogin={(userID, password) => this.onLogin(userID, password)} onSwitchToRegister={this.onSwitchToRegister} /> : '' }
+          { appStatus === AppConfig.APP_STATUS.REGISTER ? <RegisterOverlay onRegister={this.onRegister} onSwitchToLogin={this.onSwitchToLogin} /> : '' }
           <SearchBar
             onChange={this.onSearchTermChanged}
             onSubmit={this.makeQuery}
