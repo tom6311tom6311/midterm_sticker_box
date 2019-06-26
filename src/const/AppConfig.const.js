@@ -17,6 +17,8 @@ const AppConfig = {
     RENAMING: 'RENAMING',
     COMPRESSING: 'COMPRESSING',
     UPLOADING: 'UPLOADING',
+    OWN_STICKERS: 'OWN_STICKERS',
+    OWN_TAGS: 'OWN_TAGS',
   },
 };
 

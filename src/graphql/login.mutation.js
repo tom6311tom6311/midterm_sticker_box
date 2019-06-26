@@ -5,6 +5,7 @@ const LOGIN_MUTATION = gql`
     login(arg: $arg) {
       success
       message
+      name
     }
   }
 `;

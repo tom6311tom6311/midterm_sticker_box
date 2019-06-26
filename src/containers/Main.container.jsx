@@ -1,9 +1,11 @@
+/* eslint-disable max-len */
 import React, { Component } from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import Compressor from 'compressorjs';
 import PropTypes from 'prop-types';
 import { ApolloClient } from 'apollo-boost';
 import IMG_SEARCH_QUERY from '../graphql/imgSearch.query.js';
+import Header from '../components/Header.component';
 import LoginOverlay from '../components/LoginOverlay.component';
 import RegisterOverlay from '../components/RegisterOverlay.component';
 import SearchBar from '../components/SearchBar.component';
@@ -17,6 +19,7 @@ import verifyImageFile from '../util/verifyImageFile.func';
 import verifyFileName from '../util/verifyFileName.func';
 import LOGIN_MUTATION from '../graphql/login.mutation.js';
 import REGISTER_MUTATION from '../graphql/register.mutation';
+import OwnOverlay from '../components/OwnOverlay.component';
 
 const mainContainerStyle = {
   height: '100%',
@@ -31,6 +34,7 @@ class Main extends Component {
     this.state = {
       appStatus: AppConfig.APP_STATUS.LOGIN,
       userID: '',
+      name: '',
       infoText: '',
       isErrorInfo: false,
       searchTerm: '',
@@ -45,6 +49,9 @@ class Main extends Component {
 
     this.onLogin = this.onLogin.bind(this);
     this.onRegister = this.onRegister.bind(this);
+    this.onSwitchToOwnStickers = this.onSwitchToOwnStickers.bind(this);
+    this.onSwitchToOwnTags = this.onSwitchToOwnTags.bind(this);
+    this.onSwitchToMain = this.onSwitchToMain.bind(this);
     this.onSwitchToRegister = this.onSwitchToRegister.bind(this);
     this.onSwitchToLogin = this.onSwitchToLogin.bind(this);
     this.onImageLoaded = this.onImageLoaded.bind(this);
@@ -77,12 +84,14 @@ class Main extends Component {
           },
         },
       })
-      .then(({ data: { login: { success, message } } }) => {
+      .then(({ data: { login: { success, message, name } } }) => {
         if (success) {
           this.setState(prevState => ({
             ...prevState,
             userID,
+            name,
           }));
+          this.showInfo('登入成功', false);
           this.makeQuery();
         } else {
           this.showInfo(message, true);
@@ -100,17 +109,20 @@ class Main extends Component {
     .mutate({
       mutation: REGISTER_MUTATION,
       variables: {
-        userID,
-        name,
-        password,
+        arg: {
+          userID,
+          name,
+          password,
+        },
       },
     })
-    .then(({ data: { success, message } }) => {
+    .then(({ data: { register: { success, message } } }) => {
       if (success) {
         this.setState(prevState => ({
           ...prevState,
           userID,
         }));
+        this.showInfo('註冊成功，直接登入', false);
         this.makeQuery();
       } else {
         this.showInfo(message, true);
@@ -120,6 +132,20 @@ class Main extends Component {
       console.error('Error:', error);
       this.showInfo('網路連不上', true);
     });
+  }
+
+  onSwitchToOwnStickers() {
+    this.setState(prevState => ({
+      ...prevState,
+      appStatus: AppConfig.APP_STATUS.OWN_STICKERS,
+    }));
+  }
+
+  onSwitchToOwnTags() {
+    this.setState(prevState => ({
+      ...prevState,
+      appStatus: AppConfig.APP_STATUS.OWN_TAGS,
+    }));
   }
 
   onSwitchToRegister() {
@@ -134,6 +160,10 @@ class Main extends Component {
       ...prevState,
       appStatus: AppConfig.APP_STATUS.LOGIN,
     }));
+  }
+
+  onSwitchToMain() {
+    this.makeQuery();
   }
 
   onImageLoaded() {
@@ -344,6 +374,8 @@ class Main extends Component {
         <div style={mainContainerStyle}>
           { appStatus === AppConfig.APP_STATUS.LOGIN ? <LoginOverlay onLogin={(userID, password) => this.onLogin(userID, password)} onSwitchToRegister={this.onSwitchToRegister} /> : '' }
           { appStatus === AppConfig.APP_STATUS.REGISTER ? <RegisterOverlay onRegister={this.onRegister} onSwitchToLogin={this.onSwitchToLogin} /> : '' }
+          { appStatus === AppConfig.APP_STATUS.OWN_STICKERS || appStatus === AppConfig.APP_STATUS.OWN_TAGS ? <OwnOverlay onSwitchToOwnTags={this.onSwitchToOwnTags} onSwitchToOwnStickers={this.onSwitchToOwnStickers} onSwitchToMain={this.onSwitchToMain} name={this.state.name} status={this.state.appStatus} /> : ''}
+          <Header name={this.state.name} status={this.state.appStatus} onSwitchToOwnStickers={this.onSwitchToOwnStickers} onSwitchToMain={this.onSwitchToMain} />
           <SearchBar
             onChange={this.onSearchTermChanged}
             onSubmit={this.makeQuery}
