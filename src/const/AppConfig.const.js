@@ -8,17 +8,18 @@ const AppConfig = {
   ALLOWED_MEDIA_TYPE: ['image/jpeg', 'image/png', 'image/gif'],
   MAX_NAME_LENGTH: 20,
   COMPRESS_QUALITY: 0.6,
-  APP_STATUS: {
+  PAGES: {
     LOGIN: 'LOGIN',
     REGISTER: 'REGISTER',
+    SEARCH: 'SEARCH',
+    MY_BOX: 'MY_BOX',
+  },
+  APP_STATUS: {
     READY: 'READY',
     LOADING: 'LOADING',
-    // DISCONNECTED: 'DISCONNECTED',
     RENAMING: 'RENAMING',
     COMPRESSING: 'COMPRESSING',
     UPLOADING: 'UPLOADING',
-    OWN_STICKERS: 'OWN_STICKERS',
-    OWN_TAGS: 'OWN_TAGS',
   },
 };
 
