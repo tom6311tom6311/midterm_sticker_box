@@ -20,9 +20,10 @@ class Main extends Component {
       user: {
         userID: '',
         name: '',
-        infoText: '',
-        isErrorInfo: false,
+        sessionID: '',
       },
+      infoText: '',
+      isErrorInfo: false,
     };
     this.onSwitchPage = this.onSwitchPage.bind(this);
     this.onLoginSuccess = this.onLoginSuccess.bind(this);
@@ -41,10 +42,23 @@ class Main extends Component {
     }));
   }
 
-  onLoginSuccess(user) {
+  onLoginSuccess({
+    name,
+    userID,
+    ownTagIDs,
+    subscribedTagIDs,
+    sessionID,
+  }) {
     this.setState(prevState => ({
       ...prevState,
-      user,
+      user: {
+        ...prevState.user,
+        name,
+        userID,
+        ownTagIDs,
+        subscribedTagIDs,
+        sessionID,
+      },
     }));
   }
 
@@ -68,7 +82,7 @@ class Main extends Component {
   }
 
   render() {
-    const { page, infoText, isErrorInfo } = this.state;
+    const { user, page, infoText, isErrorInfo } = this.state;
     let pageComponent = <div />;
     switch (page) {
       case AppConfig.PAGES.LOGIN:
@@ -78,10 +92,10 @@ class Main extends Component {
         pageComponent = <RegisterPage onSwitchPage={this.onSwitchPage} onLoginSuccess={this.onLoginSuccess} showInfo={this.showInfo} />;
         break;
       case AppConfig.PAGES.SEARCH:
-        pageComponent = <SearchPage onSwitchPage={this.onSwitchPage} user={this.state.user} showInfo={this.showInfo} />;
+        pageComponent = <SearchPage onSwitchPage={this.onSwitchPage} user={user} showInfo={this.showInfo} />;
         break;
       case AppConfig.PAGES.MY_BOX:
-        pageComponent = <MyBoxPage onSwitchPage={this.onSwitchPage} user={this.state.user} showInfo={this.showInfo} />;
+        pageComponent = <MyBoxPage onSwitchPage={this.onSwitchPage} user={user} showInfo={this.showInfo} />;
         break;
       default:
         pageComponent = <div />;
@@ -89,8 +103,10 @@ class Main extends Component {
     }
     return (
       <MuiThemeProvider>
-        <InfoBand infoText={infoText} isError={isErrorInfo} />
-        <div className={'main'}>{pageComponent}</div>
+        <div className={'main'}>
+          <InfoBand infoText={infoText} isError={isErrorInfo} />
+          {pageComponent}
+        </div>
       </MuiThemeProvider>
     );
   }

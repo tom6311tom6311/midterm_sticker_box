@@ -5,7 +5,11 @@ const LOGIN_MUTATION = gql`
     login(arg: $arg) {
       success
       message
+      userID
       name
+      ownTagIDs
+      subscribedTagIDs
+      sessionID
     }
   }
 `;

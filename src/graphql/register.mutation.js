@@ -5,6 +5,11 @@ const REGISTER_MUTATION = gql`
     register(arg: $arg) {
       success
       message
+      userID
+      name
+      ownTagIDs
+      subscribedTagIDs
+      sessionID
     }
   }
 `;

@@ -119,7 +119,7 @@ class RegisterPage extends Component {
     const { onSwitchPage } = this.props;
     const { infoText, isErrorInfo } = this.state;
     return (
-      <div className="overlay-wrapper overlay-wrapper__full">
+      <div className="page-wrapper">
         <InfoBand infoText={infoText} isError={isErrorInfo} />
         <div className="overlay overlay--title">登入</div>
         <div className="overlay overlay--input__full">

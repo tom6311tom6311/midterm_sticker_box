@@ -2,38 +2,24 @@
 import React, { Component } from 'react';
 import Compressor from 'compressorjs';
 import PropTypes from 'prop-types';
+import { FloatingActionButton } from 'material-ui';
 import { Tabs, Tab } from 'material-ui/Tabs';
-import FlatButton from 'material-ui/FlatButton';
-import ApolloClientManager from '../util/ApolloClientManager.class';
-import OWN_STICKERS_QUERY from '../graphql/ownStickers.query.js';
-import ImageGridList from '../components/ImageGridList.component';
 import AppConfig from '../const/AppConfig.const';
-import Dropzone from '../components/Dropzone.component';
+import OWN_STICKERS_QUERY from '../graphql/ownStickers.query.js';
+import ApolloClientManager from '../util/ApolloClientManager.class';
 import verifyImageFile from '../util/verifyImageFile.func';
 import verifyFileName from '../util/verifyFileName.func';
-
-const styles = {
-  headline: {
-    fontSize: 24,
-    paddingTop: 16,
-    marginBottom: 12,
-    fontWeight: 400,
-  },
-};
+import LoadingOverlay from '../components/LoadingOverlay.component';
+import RenamingOverlay from '../components/RenamingOverlay.component';
+import ImageGridList from '../components/ImageGridList.component';
+import Dropzone from '../components/Dropzone.component';
 
 const TABS = {
   OWNSTICKERS: 'OWNSTICKERS',
   OWNTAGS: 'OWNTAGS',
 };
 
-const mainContainerStyle = {
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-};
-
-class SearchPage extends Component {
+class MyBoxPage extends Component {
   constructor() {
     super();
     this.state = {
@@ -50,7 +36,6 @@ class SearchPage extends Component {
 
     this.onSwitchToOwnStickers = this.onSwitchToOwnStickers.bind(this);
     this.onSwitchToOwnTags = this.onSwitchToOwnTags.bind(this);
-    this.onSwitchToMain = this.onSwitchToMain.bind(this);
     this.onImageLoaded = this.onImageLoaded.bind(this);
     this.onUploadFileNameChanged = this.onUploadFileNameChanged.bind(this);
     this.onCopyrightCheckboxChanged = this.onCopyrightCheckboxChanged.bind(this);
@@ -61,7 +46,7 @@ class SearchPage extends Component {
     this.compressImage = this.compressImage.bind(this);
     this.uploadImage = this.uploadImage.bind(this);
     this.exitOverlay = this.exitOverlay.bind(this);
-    this.handleChange = this.handleChange.bind(this);
+    this.handleTabChange = this.handleTabChange.bind(this);
   }
 
   componentDidMount() {
@@ -80,10 +65,6 @@ class SearchPage extends Component {
       ...prevState,
       appStatus: AppConfig.APP_STATUS.OWN_TAGS,
     }));
-  }
-
-  onSwitchToMain() {
-    this.props.onSwitchPage(AppConfig.PAGES.SEARCH);
   }
 
   onImageLoaded() {
@@ -138,17 +119,16 @@ class SearchPage extends Component {
   }
 
   ownStickersQuery() {
-    const { showInfo } = this.props;
+    const { showInfo, user: { userID } } = this.props;
     this.setState(prevState => ({
       ...prevState,
       appStatus: AppConfig.APP_STATUS.LOADING,
     }));
     this.setLoadTimeout(AppConfig.APP_STATUS.READY);
-    console.log(this.props.user.userID);
     ApolloClientManager.makeQuery(
       OWN_STICKERS_QUERY,
       {
-        ownerID: this.props.user.userID,
+        ownerID: userID,
       },
       ({ data: { ownStickers: stickerList } }) => {
         this.setState(prevState => ({
@@ -265,68 +245,80 @@ class SearchPage extends Component {
     }));
   }
 
-  handleChange(value) {
+  handleTabChange(value) {
     this.setState({
       tab: value,
     });
   }
 
   render() {
-    const { tileData } = this.state;
+    const { appStatus, tileData } = this.state;
     const { onSwitchPage } = this.props;
     return (
-      <div style={mainContainerStyle}>
+      <div className={'page-wrapper'}>
+        { appStatus === AppConfig.APP_STATUS.LOADING ? <LoadingOverlay /> : '' }
+        {
+          appStatus === AppConfig.APP_STATUS.RENAMING ?
+            <RenamingOverlay
+              onNameChange={this.onUploadFileNameChanged}
+              onCheckboxChange={this.onCopyrightCheckboxChanged}
+              onSubmit={this.verifyNameAndCopyright}
+              onExit={this.exitOverlay}
+            /> :
+            ''
+        }
         <Tabs
+          className={'page-tabs'}
           value={this.state.tab}
-          onChange={this.handleChange}
+          onChange={this.handleTabChange}
         >
-          <Tab label="My stickers" value={TABS.OWNSTICKERS}>
-            <div>
-              <Dropzone onDrop={this.onFileDroppedIn}>
-                <ImageGridList
-                  tileData={tileData}
-                  onImageLoaded={this.onImageLoaded}
-                />
-              </Dropzone>
-            </div>
+          <Tab
+            label="My stickers"
+            value={TABS.OWNSTICKERS}
+          >
+            <Dropzone onDrop={this.onFileDroppedIn}>
+              <ImageGridList
+                tileData={tileData}
+                onImageLoaded={this.onImageLoaded}
+              />
+            </Dropzone>
           </Tab>
-          <Tab label="My tags" value={TABS.OWNTAGS}>
-            <div>
-              <h2 style={styles.headline}>Controllable Tab B</h2>
-              <p>
-                This is another example of a controllable tab. Remember, if you
-                use controllable Tabs, you need to give all of your tabs values or else
-                you wont be able to select them.
-              </p>
-            </div>
+          <Tab
+            className={'page-tab'}
+            label="My tags"
+            value={TABS.OWNTAGS}
+          >
+            {'test'}
           </Tab>
         </Tabs>
         <div className="overlay overlay--breadcrumb">
-          <FlatButton primary onClick={() => { onSwitchPage(AppConfig.PAGES.SEARCH); }}>
-            搜尋貼圖
-          </FlatButton>
+          <FloatingActionButton onClick={() => { onSwitchPage(AppConfig.PAGES.SEARCH); }}>
+            <i className="fas fa-search" />
+          </FloatingActionButton>
         </div>
       </div>
     );
   }
 }
 
-SearchPage.propTypes = {
+MyBoxPage.propTypes = {
   user: PropTypes.shape({
     name: PropTypes.string,
     userID: PropTypes.string,
+    sessionID: PropTypes.string,
   }),
   onSwitchPage: PropTypes.func,
   showInfo: PropTypes.func,
 };
 
-SearchPage.defaultProps = {
+MyBoxPage.defaultProps = {
   user: {
     name: '',
     userID: '',
+    sessionID: '',
   },
   onSwitchPage: () => {},
   showInfo: () => {},
 };
 
-export default SearchPage;
+export default MyBoxPage;

@@ -89,7 +89,7 @@ class LoginPage extends Component {
   render() {
     const { onSwitchPage } = this.props;
     return (
-      <div className="overlay-wrapper overlay-wrapper__full">
+      <div className="page-wrapper">
         <div className="overlay overlay--title">登入</div>
         <div className="overlay overlay--input__full">
           <TextField

@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import Compressor from 'compressorjs';
 import PropTypes from 'prop-types';
-import FlatButton from 'material-ui/FlatButton';
+import { FloatingActionButton } from 'material-ui';
 import AppConfig from '../const/AppConfig.const';
 import IMG_SEARCH_QUERY from '../graphql/imgSearch.query.js';
 import verifyImageFile from '../util/verifyImageFile.func';
@@ -11,7 +11,6 @@ import ApolloClientManager from '../util/ApolloClientManager.class';
 import SearchBar from '../components/SearchBar.component';
 import LoadingOverlay from '../components/LoadingOverlay.component';
 import RenamingOverlay from '../components/RenamingOverlay.component';
-import InfoBand from '../components/InfoBand.component';
 import ImageGridList from '../components/ImageGridList.component';
 import Dropzone from '../components/Dropzone.component';
 
@@ -226,9 +225,9 @@ class SearchPage extends Component {
 
   render() {
     const { onSwitchPage } = this.props;
-    const { appStatus, infoText, isErrorInfo, tileData } = this.state;
+    const { appStatus, tileData } = this.state;
     return (
-      <div>
+      <div className={'page-wrapper'}>
         <SearchBar
           onChange={this.onSearchTermChanged}
           onSubmit={this.makeQuery}
@@ -244,7 +243,6 @@ class SearchPage extends Component {
             /> :
             ''
         }
-        <InfoBand infoText={infoText} isError={isErrorInfo} />
         <Dropzone onDrop={this.onFileDroppedIn}>
           <ImageGridList
             tileData={tileData}
@@ -252,9 +250,9 @@ class SearchPage extends Component {
           />
         </Dropzone>
         <div className="overlay overlay--breadcrumb">
-          <FlatButton primary onClick={() => { onSwitchPage(AppConfig.PAGES.MY_BOX); }}>
-            我的收藏
-          </FlatButton>
+          <FloatingActionButton onClick={() => { onSwitchPage(AppConfig.PAGES.MY_BOX); }}>
+            <i className="fas fa-folder-open" />
+          </FloatingActionButton>
         </div>
       </div>
     );
