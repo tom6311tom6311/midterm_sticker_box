@@ -7,6 +7,7 @@ import { FloatingActionButton } from 'material-ui';
 import { Tabs, Tab } from 'material-ui/Tabs';
 import AppConfig from '../const/AppConfig.const';
 import OWN_STICKERS_QUERY from '../graphql/ownStickers.query.js';
+import OWN_TAGS_QUERY from '../graphql/ownTags.query.js';
 import UPLOAD_STICKERS_MUTATION from '../graphql/uploadStickers.mutation';
 import verifyImageFile from '../util/verifyImageFile.func';
 import verifyFileDes from '../util/verifyFileDes.func';
@@ -15,6 +16,10 @@ import LoadingOverlay from '../components/LoadingOverlay.component';
 import DescribingOverlay from '../components/DescribingOverlay.component';
 import ImageGridList from '../components/ImageGridList.component';
 import Dropzone from '../components/Dropzone.component';
+import EditStickerBtn from '../components/EditStickerBtn.component';
+import EditTagBtn from '../components/EditTagBtn.component';
+import UPDATE_STICKERS_MUTATION from '../graphql/updateSticker.mutation';
+import KICK_SUBSCRIBERS_MUTATION from '../graphql/kickSubscribers.mutation.js';
 
 const TABS = {
   OWNSTICKERS: 'OWNSTICKERS',
@@ -28,6 +33,7 @@ class MyBoxPage extends Component {
       appStatus: AppConfig.APP_STATUS.READY,
       uploadFileDes: '',
       tileData: [],
+      tagData: [],
       copyrightAgree: false,
       tab: TABS.OWNSTICKERS,
     };
@@ -49,6 +55,7 @@ class MyBoxPage extends Component {
     this.uploadImage = this.uploadImage.bind(this);
     this.exitOverlay = this.exitOverlay.bind(this);
     this.handleTabChange = this.handleTabChange.bind(this);
+    this.updateSticker = this.updateSticker.bind(this);
   }
 
   componentDidMount() {
@@ -135,12 +142,85 @@ class MyBoxPage extends Component {
       ({ data: { ownStickers: stickerList } }) => {
         this.setState(prevState => ({
           ...prevState,
-          tileData: stickerList.map(({ stickerID, type, description }) => ({
+          tileData: stickerList.map(({ stickerID, type, tagIDs, description }) => ({
             img: `${AppConfig.SERVER_URL.HTTP}/imgs/${stickerID}.${type}`,
             title: description,
             cols: 1,
+            actionIcon: (
+              <EditStickerBtn
+                stickerID={stickerID}
+                updateSticker={this.updateSticker}
+                tagIDs={tagIDs}
+                description={description}
+              />
+            ),
           })),
         }));
+      },
+      (error) => {
+        console.error('Error:', error);
+        showInfo('網路連不上', true);
+      },
+    );
+  }
+
+  updateSticker(sticker, callback = () => {}) {
+    const { showInfo, user: { userID, sessionID } } = this.props;
+    const { stickerID, description, tagIDs } = sticker;
+    if (description) {
+      try {
+        verifyFileDes(description);
+      } catch (err) {
+        showInfo(`檔案敘述有問題：${err.message}`, true);
+        return;
+      }
+    }
+    ApolloClientManager.makeMutation(
+      UPDATE_STICKERS_MUTATION,
+      {
+        arg: {
+          userID,
+          sessionID,
+          stickerID,
+          description,
+          tagIDs,
+        },
+      },
+      ({ data: { updateSticker: { success, message } } }) => {
+        if (success) {
+          showInfo('儲存成功', false);
+          callback();
+        } else {
+          showInfo(message, true);
+        }
+      },
+      (error) => {
+        console.error('Error:', error);
+        showInfo('網路連不上', true);
+      },
+    );
+  }
+
+  updateTag(tag, callback = () => {}) {
+    const { showInfo, user: { userID, sessionID } } = this.props;
+    const { tagID, kickUserIDs } = tag;
+    ApolloClientManager.makeMutation(
+      KICK_SUBSCRIBERS_MUTATION,
+      {
+        arg: {
+          userID,
+          sessionID,
+          tagID,
+          kickUserIDs,
+        },
+      },
+      ({ data: { kickSubscribers: { success, message } } }) => {
+        if (success) {
+          showInfo('用戶踢除成功', false);
+          callback();
+        } else {
+          showInfo(message, true);
+        }
       },
       (error) => {
         console.error('Error:', error);
@@ -271,14 +351,37 @@ class MyBoxPage extends Component {
     }));
   }
 
+  ownTagsQuery() {
+    const { user, showInfo } = this.props;
+    ApolloClientManager.makeQuery(
+      OWN_TAGS_QUERY,
+      {
+        ownerID: user.userID,
+      },
+      ({ data: { ownTags: tagList } }) => {
+        this.setState(prevState => ({
+          ...prevState,
+          tagData: tagList,
+        }));
+      },
+      (error) => {
+        console.error('Error:', error);
+        showInfo('網路連不上', true);
+      },
+    );
+  }
+
   handleTabChange(value) {
     this.setState({
       tab: value,
     });
+    if (value === TABS.OWNTAGS) {
+      this.ownTagsQuery();
+    }
   }
 
   render() {
-    const { appStatus, tileData } = this.state;
+    const { appStatus, tileData, tagData } = this.state;
     const { onSwitchPage } = this.props;
     return (
       <div className={'page-wrapper'}>
@@ -314,7 +417,15 @@ class MyBoxPage extends Component {
             label="My tags"
             value={TABS.OWNTAGS}
           >
-            {'test'}
+            {tagData.map(({ tagID, key, subscriberIDs }) => (
+              <EditTagBtn
+                tagID={tagID}
+                key={tagID}
+                tagKey={key}
+                subscriberIDs={subscriberIDs}
+                updateTag={this.updateTag}
+              />
+            ))}
           </Tab>
         </Tabs>
         <div className="overlay overlay--breadcrumb">

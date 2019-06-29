@@ -4,29 +4,26 @@ import GridList from 'material-ui/GridList';
 import GridListTile from 'material-ui/GridList/GridTile';
 
 const styles = {
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    overflow: 'hidden',
-    width: '100%',
-    height: '80%',
-  },
   gridList: {
+    width: '100%',
     margin: 'auto',
-    height: '100%',
   },
 };
 
 const ImageGridList = ({ tileData, onImageLoaded }) => (
-  <div style={styles.root}>
-    <GridList cellHeight={190} spacing={2} style={styles.gridList} cols={3}>
-      {tileData.map(tile => (
-        <GridListTile key={tile.img} cols={tile.cols || 1}>
+  <div>
+    <GridList cellHeight={186} spacing={2} style={styles.gridList} cols={3}>
+      {tileData.map(({ img, title, cols, actionIcon }) => (
+        <GridListTile
+          key={img}
+          title={title}
+          cols={cols || 1}
+          actionIcon={actionIcon}
+        >
           <img
             className={'grabbable'}
-            src={tile.img}
-            alt={tile.title}
+            src={img}
+            alt={title}
             onLoad={onImageLoaded}
           />
         </GridListTile>
