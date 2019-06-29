@@ -28,7 +28,7 @@ const styles = {
   },
 };
 
-const RenamingOverlay = ({ onNameChange, onCheckboxChange, onSubmit, onExit }) => (
+const DescribingOverlay = ({ onDesChange, onCheckboxChange, onSubmit, onExit }) => (
   <div className="overlay-wrapper">
     <div className="overlay overlay--input">
       <TextField
@@ -38,7 +38,7 @@ const RenamingOverlay = ({ onNameChange, onCheckboxChange, onSubmit, onExit }) =
         underlineStyle={styles.underline}
         underlineFocusStyle={styles.underline}
         hintStyle={styles.hint}
-        onChange={onNameChange}
+        onChange={onDesChange}
         onKeyPress={({ key }) => { if (key === 'Enter') onSubmit(); }}
       />
       <RaisedButton size={'large'} onClick={onSubmit}>
@@ -57,18 +57,18 @@ const RenamingOverlay = ({ onNameChange, onCheckboxChange, onSubmit, onExit }) =
   </div>
 );
 
-RenamingOverlay.propTypes = {
-  onNameChange: PropTypes.func,
+DescribingOverlay.propTypes = {
+  onDesChange: PropTypes.func,
   onCheckboxChange: PropTypes.func,
   onSubmit: PropTypes.func,
   onExit: PropTypes.func,
 };
 
-RenamingOverlay.defaultProps = {
-  onNameChange: () => {},
+DescribingOverlay.defaultProps = {
+  onDesChange: () => {},
   onCheckboxChange: () => {},
   onSubmit: () => {},
   onExit: () => {},
 };
 
-export default RenamingOverlay;
+export default DescribingOverlay;

@@ -66,17 +66,14 @@ class LoginPage extends Component {
           password,
         },
       },
-      ({ data: { login: { success, message, name } } }) => {
-        if (success) {
+      ({ data: { login: loginResp } }) => {
+        if (loginResp.success) {
           showInfo('登入成功', false);
           const { onLoginSuccess, onSwitchPage } = this.props;
-          onLoginSuccess({
-            name,
-            userID,
-          });
+          onLoginSuccess(loginResp);
           onSwitchPage(AppConfig.PAGES.SEARCH);
         } else {
-          showInfo(message, true);
+          showInfo(loginResp.message, true);
         }
       },
       (error) => {

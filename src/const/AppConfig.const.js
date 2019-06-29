@@ -6,7 +6,7 @@ const AppConfig = {
   LOAD_TIMEOUT: 1000, // ms
   INFO_TIMEOUT: 2000, // ms
   ALLOWED_MEDIA_TYPE: ['image/jpeg', 'image/png', 'image/gif'],
-  MAX_NAME_LENGTH: 20,
+  MAX_DESCRIPTION_LENGTH: 30,
   COMPRESS_QUALITY: 0.6,
   PAGES: {
     LOGIN: 'LOGIN',
@@ -17,7 +17,7 @@ const AppConfig = {
   APP_STATUS: {
     READY: 'READY',
     LOADING: 'LOADING',
-    RENAMING: 'RENAMING',
+    DESCRIBING: 'DESCRIBING',
     COMPRESSING: 'COMPRESSING',
     UPLOADING: 'UPLOADING',
   },
