@@ -35,11 +35,11 @@ To send a sticker, just drag it from StickerBox to desktop chatting apps. Beside
 
 * To register 
 
-![All Text]()
+![All Text](src/demo/register.gif)
 
 * To login
 
-![All Text]()
+![All Text](src/demo/login.gif)
 
 * To search and browse stickers:
 
@@ -55,31 +55,31 @@ To send a sticker, just drag it from StickerBox to desktop chatting apps. Beside
 
 * To search and subscribe tags:
 
-![Alt Text]()
+![Alt Text](src/demo/searchAndSubscribeTag.gif)
 
 * To modify description of own stickers:
 
-![All Text]()
+![All Text](src/demo/modifyDescriptionOfOwnSticker.gif)
 
 * To delete own stickers:
 
-![All Text]()
+![All Text](src/demo/deleteOwnSticker.gif)
 
 * To subscribe tags of own stickers:
 
-![All Text]()
+![All Text](src/demo/subscribeTagOfOwnSticker.gif)
 
 * To create own tags:
 
-![All Text]()
+![All Text](src/demo/createOwnTag.gif)
 
 * To manage subscribed tags
 
-![All Text]()
+![All Text](src/demo/manageSubscribedTag.gif)
 
 * To kick subscribers from subscribing own tags
 
-![All Text]()
+![All Text](src/demo/kickSubscriber.gif)
 
 
 ## Known issues
