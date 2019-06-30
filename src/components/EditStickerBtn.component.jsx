@@ -8,18 +8,22 @@ class EditStickerBtn extends Component {
     this.state = {
       open: false,
       tmpDesc: '',
+      tmpStickerTagIDs: [],
     };
     this.onOpen = this.onOpen.bind(this);
     this.onSave = this.onSave.bind(this);
     this.onQuit = this.onQuit.bind(this);
+    this.onDelete = this.onDelete.bind(this);
     this.onDescChange = this.onDescChange.bind(this);
+    this.toggleTag = this.toggleTag.bind(this);
   }
 
   componentWillMount() {
-    const { description } = this.props;
+    const { description, stickerTags } = this.props;
     this.setState(prevState => ({
       ...prevState,
       tmpDesc: description,
+      tmpStickerTagIDs: stickerTags.map(({ tagID }) => tagID),
     }));
   }
 
@@ -31,11 +35,12 @@ class EditStickerBtn extends Component {
 
   onSave() {
     const { stickerID, updateSticker } = this.props;
-    const { tmpDesc } = this.state;
+    const { tmpDesc, tmpStickerTagIDs } = this.state;
     updateSticker(
       {
         stickerID,
         description: tmpDesc,
+        tagIDs: tmpStickerTagIDs,
       },
       () => {
         this.setState({
@@ -51,6 +56,18 @@ class EditStickerBtn extends Component {
     });
   }
 
+  onDelete() {
+    const { stickerID, deleteSticker } = this.props;
+    deleteSticker(
+      stickerID,
+      () => {
+        this.setState({
+          open: false,
+        });
+      },
+    );
+  }
+
   onDescChange({ target: { value: tmpDesc } }) {
     this.setState(prevState => ({
       ...prevState,
@@ -58,10 +75,35 @@ class EditStickerBtn extends Component {
     }));
   }
 
+  toggleTag(tagID) {
+    const { tmpStickerTagIDs } = this.state;
+    if (tmpStickerTagIDs.indexOf(tagID) !== -1) {
+      this.setState(prevState => ({
+        ...prevState,
+        tmpStickerTagIDs: prevState.tmpStickerTagIDs.filter(id => id !== tagID),
+      }));
+    } else {
+      this.setState(prevState => ({
+        ...prevState,
+        tmpStickerTagIDs: [...prevState.tmpStickerTagIDs, tagID],
+      }));
+    }
+  }
+
   render() {
-    const { tagIDs } = this.props;
-    const { open, tmpDesc } = this.state;
+    const { allTags } = this.props;
+    const { open, tmpDesc, tmpStickerTagIDs } = this.state;
     const actions = [
+      <FlatButton
+        label="刪除貼圖"
+        secondary
+        onClick={this.onDelete}
+      />,
+      <FlatButton
+        label="取消"
+        primary
+        onClick={this.onQuit}
+      />,
       <FlatButton
         label="儲存"
         primary
@@ -89,7 +131,25 @@ class EditStickerBtn extends Component {
             value={tmpDesc}
             onChange={this.onDescChange}
           />
-          {tagIDs}
+          <h3>已訂閱標籤(綠色為已標註，灰色為未標註)</h3>
+          {allTags.map(({ tagID, ownerID, key }) => {
+            const color = tmpStickerTagIDs.indexOf(tagID) !== -1 ? 'green' : 'gray';
+            return (
+              <FlatButton
+                key={tagID}
+                style={{ margin: '4px' }}
+                label={`${key}(${ownerID})`}
+                labelStyle={{ color }}
+                icon={(
+                  <FontIcon
+                    className={'fas fa-tags'}
+                    color={color}
+                  />
+                )}
+                onClick={() => { this.toggleTag(tagID); }}
+              />
+            );
+          })}
         </Dialog>
       </IconButton>
     );
@@ -99,14 +159,26 @@ class EditStickerBtn extends Component {
 EditStickerBtn.propTypes = {
   stickerID: PropTypes.string,
   updateSticker: PropTypes.func,
-  tagIDs: PropTypes.arrayOf(PropTypes.string),
+  deleteSticker: PropTypes.func,
+  stickerTags: PropTypes.arrayOf(PropTypes.shape({
+    tagID: PropTypes.string,
+    ownerID: PropTypes.string,
+    key: PropTypes.string,
+  })),
+  allTags: PropTypes.arrayOf(PropTypes.shape({
+    tagID: PropTypes.string,
+    ownerID: PropTypes.string,
+    key: PropTypes.string,
+  })),
   description: PropTypes.string,
 };
 
 EditStickerBtn.defaultProps = {
   stickerID: '',
   updateSticker: () => {},
-  tagIDs: [],
+  deleteSticker: () => {},
+  stickerTags: [],
+  allTags: [],
   description: PropTypes.string,
 };
 

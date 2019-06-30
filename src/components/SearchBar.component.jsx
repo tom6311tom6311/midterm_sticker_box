@@ -10,7 +10,7 @@ const styles = {
   toolbar: {
     backgroundColor: '#4285f4',
     width: '100%',
-    height: '166px',
+    height: '130px',
   },
   toolbarGroup: {
     width: '100%',
@@ -39,22 +39,34 @@ class SearchBar extends Component {
   constructor() {
     super();
     this.state = {
-      dataSource: [],
+      searchTerm: '',
+      matchedTags: [],
     };
     this.onUpdateInput = this.onUpdateInput.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
   }
 
   onUpdateInput(value) {
-    if (!value.startsWith('#')) return;
+    this.setState(prevState => ({
+      ...prevState,
+      searchTerm: value,
+    }));
+    if (!value.startsWith('#')) {
+      this.setState(prevState => ({
+        ...prevState,
+        matchedTags: [],
+      }));
+      return;
+    }
     ApolloClientManager.makeQuery(
       TAG_SEARCH,
       {
         searchKey: value.substr(1),
       },
-      ({ data: { tagSearch: tagList } }) => {
+      ({ data: { tagSearch: matchedTags } }) => {
         this.setState(prevState => ({
           ...prevState,
-          dataSource: tagList.map(({ key }) => `#${key}`),
+          matchedTags,
         }));
       },
       (error) => {
@@ -63,9 +75,26 @@ class SearchBar extends Component {
     );
   }
 
+  onSubmit() {
+    const { onSearch, onSubscribe } = this.props;
+    const { searchTerm, matchedTags } = this.state;
+    if (searchTerm.startsWith('#')) {
+      onSubscribe(
+        matchedTags.find(({ key }) => key === searchTerm.substr(1)).tagID,
+        () => {
+          this.setState({
+            searchTerm: '',
+            matchedTags: [],
+          });
+        },
+      );
+    } else {
+      onSearch(searchTerm);
+    }
+  }
+
   render() {
-    const { onChange, onSubmit } = this.props;
-    const { dataSource } = this.state;
+    const { searchTerm, matchedTags } = this.state;
     return (
       <Toolbar style={styles.toolbar}>
         <ToolbarGroup style={styles.toolbarGroup}>
@@ -77,15 +106,15 @@ class SearchBar extends Component {
             underlineStyle={styles.underline}
             underlineFocusStyle={styles.underline}
             hintStyle={styles.hint}
-            onChange={onChange}
-            onKeyPress={({ key }) => { if (key === 'Enter') onSubmit(); }}
-            dataSource={dataSource}
+            searchText={searchTerm}
+            onKeyPress={({ key }) => { if (key === 'Enter') this.onSubmit(); }}
+            dataSource={matchedTags.map(({ key }) => `#${key}`)}
             onUpdateInput={this.onUpdateInput}
           />
-          <RaisedButton size={'large'} onClick={onSubmit}>
-            搜尋
+          <RaisedButton size={'large'} onClick={this.onSubmit}>
+            {searchTerm.startsWith('#') ? '訂閱' : '搜尋'}
           </RaisedButton>
-          <div className={'header--hint-text'}>或以#開頭搜尋Tag</div>
+          <div className={'header--hint-text'}>或以#開頭訂閱Tag</div>
         </ToolbarGroup>
       </Toolbar>
     );
@@ -93,13 +122,13 @@ class SearchBar extends Component {
 }
 
 SearchBar.propTypes = {
-  onChange: PropTypes.func,
-  onSubmit: PropTypes.func,
+  onSearch: PropTypes.func,
+  onSubscribe: PropTypes.func,
 };
 
 SearchBar.defaultProps = {
-  onChange: () => {},
-  onSubmit: () => {},
+  onSearch: () => {},
+  onSubscribe: () => {},
 };
 
 export default SearchBar;

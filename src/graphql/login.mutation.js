@@ -7,8 +7,6 @@ const LOGIN_MUTATION = gql`
       message
       userID
       name
-      ownTagIDs
-      subscribedTagIDs
       sessionID
     }
   }

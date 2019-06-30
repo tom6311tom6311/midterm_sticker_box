@@ -12,8 +12,8 @@ class EditTagBtn extends Component {
     this.onOpen = this.onOpen.bind(this);
     this.onSave = this.onSave.bind(this);
     this.onQuit = this.onQuit.bind(this);
-    this.kickSubscriber = this.kickSubscriber.bind(this);
-    // this.deleteTag = this.deleteTag.bind(this);
+    this.toggleSubscriber = this.toggleSubscriber.bind(this);
+    this.deleteTag = this.deleteTag.bind(this);
   }
 
   componentWillMount() {
@@ -31,19 +31,19 @@ class EditTagBtn extends Component {
   }
 
   onSave() {
-    // const { subscriberIDs, tagKey, tagID, updateTag } = this.props;
-    // const {  } = this.state;
-    // updateTag(
-    //   {
-    //     tagID,
-    //     kickUserIDs: ,
-    //   },
-    //   () => {
-    //     this.setState({
-    //       open: false,
-    //     });
-    //   },
-    // );
+    const { tagID, subscriberIDs, makeKickMutation } = this.props;
+    const { subscriberIDs: tmpSubscriberIDs } = this.state;
+    makeKickMutation(
+      {
+        tagID,
+        kickUserIDs: subscriberIDs.filter(id => tmpSubscriberIDs.indexOf(id) === -1),
+      },
+      () => {
+        this.setState({
+          open: false,
+        });
+      },
+    );
   }
 
   onQuit() {
@@ -52,42 +52,50 @@ class EditTagBtn extends Component {
     });
   }
 
-  kickSubscriber(sid) {
-    this.setState(prevState => ({
-      ...prevState,
-      subscriberIDs: prevState.subscriberIDs.filter(id => id !== sid),
-    }));
+  toggleSubscriber(sid) {
+    const { subscriberIDs } = this.state;
+    if (subscriberIDs.indexOf(sid) !== -1) {
+      this.setState(prevState => ({
+        ...prevState,
+        subscriberIDs: prevState.subscriberIDs.filter(id => id !== sid),
+      }));
+    } else {
+      this.setState(prevState => ({
+        ...prevState,
+        subscriberIDs: [...prevState.subscriberIDs, sid],
+      }));
+    }
   }
 
-  // deleteTag(userID, sessionID, tagID) {
-  //   ApolloClientManager.makeMutation(
-  //     DELETE_TAG_MUTATION,
-  //     {
-  //       arg: {
-  //         userID,
-  //         sessionID,
-  //         tagID,
-  //       },
-  //     },
-  //     ({ data: { deleteTag: info } }) => {
-  //       if (info.success) {
-  //         showInfo('標籤刪除成功', false);
-  //       } else {
-  //         showInfo(info.message, true);
-  //       }
-  //     },
-  //     (error) => {
-  //       console.error('Error:', error);
-  //       showInfo('網路連不上', true);
-  //     },
-  //   );
-  // }
+  deleteTag() {
+    const { tagID, makeDeleteTagMutation } = this.props;
+    makeDeleteTagMutation(
+      {
+        tagID,
+      },
+      () => {
+        this.setState({
+          open: false,
+        });
+      },
+    );
+  }
 
 
   render() {
     const { tagKey, subscriberIDs } = this.props;
     const { open, subscriberIDs: tmpSubscriberIDs } = this.state;
     const actions = [
+      <FlatButton
+        label="刪除標籤"
+        secondary
+        onClick={this.deleteTag}
+      />,
+      <FlatButton
+        label="取消"
+        primary
+        onClick={this.onQuit}
+      />,
       <FlatButton
         label="儲存"
         primary
@@ -96,38 +104,39 @@ class EditTagBtn extends Component {
       />,
     ];
     return (
-      <div>
-        <FontIcon
-          className={'fas fa-tags'}
-          color={'grey'}
-          hoverColor={'white'}
+      <div style={{ display: 'inline-block', border: '1px solid #666', borderRadius: '8px', padding: '4px', margin: '6px' }}>
+        <FlatButton
+          style={{ height: '48px' }}
+          labelStyle={{ fontSize: '24px' }}
+          label={`#${tagKey}`}
           onClick={this.onOpen}
-        />
-        <FlatButton labelStyle={{ fontSize: '50px', height: '70px', padding: '5px', border: '2px solid #73AD21', borderRadius: '5px' }} label={tagKey} onClick={this.onOpen} >
+        >
           <Dialog
-            title="Edit Tag"
+            title={`編輯標籤：#${tagKey}`}
             actions={actions}
             modal={false}
             open={open}
             onRequestClose={this.onQuit}
           >
-            <div>
-              <h3>訂閱觀眾</h3>
-              {subscriberIDs.map(sid => (
-                <div>
-                  <FlatButton label={sid} />
-                  <FontIcon
-                    className={'fas fa-user-times'}
-                    color={tmpSubscriberIDs.indexOf(sid) !== -1 ? 'grey' : 'red'}
-                    hoverColor={'white'}
-                    onClick={() => { this.kickSubscriber(sid); }}
-                  />
-                </div>
-              ))}
-            </div>
-            <div>
-              {/* <FlatButton label={'刪除標籤'} onClick={this.deleteTag} /> */}
-            </div>
+            <h3>訂閱者</h3>
+            {subscriberIDs.map((sid) => {
+              const color = tmpSubscriberIDs.indexOf(sid) !== -1 ? 'grey' : 'red';
+              return (
+                <FlatButton
+                  key={sid}
+                  style={{ margin: '4px' }}
+                  label={sid}
+                  labelStyle={{ color }}
+                  icon={(
+                    <FontIcon
+                      className={'fas fa-user-times'}
+                      color={color}
+                    />
+                  )}
+                  onClick={() => { this.toggleSubscriber(sid); }}
+                />
+              );
+            })}
           </Dialog>
         </FlatButton>
       </div>
@@ -136,13 +145,19 @@ class EditTagBtn extends Component {
 }
 
 EditTagBtn.propTypes = {
-  subscriberIDs: PropTypes.arrayOf(PropTypes.string),
+  tagID: PropTypes.string,
   tagKey: PropTypes.string,
+  subscriberIDs: PropTypes.arrayOf(PropTypes.string),
+  makeKickMutation: PropTypes.func,
+  makeDeleteTagMutation: PropTypes.func,
 };
 
 EditTagBtn.defaultProps = {
-  subscriberIDs: [],
+  tagID: '',
   tagKey: '',
+  subscriberIDs: [],
+  makeKickMutation: () => {},
+  makeDeleteTagMutation: () => {},
 };
 
 export default EditTagBtn;

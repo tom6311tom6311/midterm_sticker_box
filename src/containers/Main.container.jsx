@@ -45,8 +45,6 @@ class Main extends Component {
   onLoginSuccess({
     name,
     userID,
-    ownTagIDs,
-    subscribedTagIDs,
     sessionID,
   }) {
     this.setState(prevState => ({
@@ -55,8 +53,6 @@ class Main extends Component {
         ...prevState.user,
         name,
         userID,
-        ownTagIDs,
-        subscribedTagIDs,
         sessionID,
       },
     }));

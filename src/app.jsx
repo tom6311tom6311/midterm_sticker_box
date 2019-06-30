@@ -55,8 +55,6 @@ const render = () => {
   ReactDOM.render(wrappedApp, document.getElementById('App'));
 };
 
-console.log(document.getElementById('App'));
-
 render();
 
 if (module.hot) {

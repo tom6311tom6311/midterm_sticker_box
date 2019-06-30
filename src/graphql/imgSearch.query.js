@@ -1,13 +1,20 @@
 import { gql } from 'apollo-boost';
 
 const IMG_SEARCH_QUERY = gql`
-  query ($searchTerm: String!) {
-    imgSearch(searchTerm: $searchTerm) {
-      stickerID
-      ownerID
-      tagIDs
-      description
-      type
+  query ($arg: ImgSearchInput!) {
+    imgSearch(arg: $arg) {
+      success
+      message
+      searchResult {
+        tagID
+        tagKey
+        stickers {
+          stickerID
+          ownerID
+          description
+          type
+        }
+      }
     }
   }
 `;

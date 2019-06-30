@@ -7,6 +7,7 @@ import { FloatingActionButton } from 'material-ui';
 import AppConfig from '../const/AppConfig.const';
 import IMG_SEARCH_QUERY from '../graphql/imgSearch.query.js';
 import UPLOAD_STICKERS_MUTATION from '../graphql/uploadStickers.mutation';
+import SUBSCRIBE_TAG_MUTATION from '../graphql/subscribeTag.mutation';
 import verifyImageFile from '../util/verifyImageFile.func';
 import verifyFileDes from '../util/verifyFileDes.func';
 import ApolloClientManager from '../util/ApolloClientManager.class';
@@ -21,7 +22,6 @@ class SearchPage extends Component {
     super();
     this.state = {
       appStatus: AppConfig.APP_STATUS.READY,
-      searchTerm: '',
       uploadFileDes: '',
       tileData: [],
       copyrightAgree: false,
@@ -31,12 +31,12 @@ class SearchPage extends Component {
     this.infoTimeout = undefined;
     this.uploadFile = {};
 
-    this.onSearchTermChanged = this.onSearchTermChanged.bind(this);
     this.onUploadFileDesChanged = this.onUploadFileDesChanged.bind(this);
     this.onCopyrightCheckboxChanged = this.onCopyrightCheckboxChanged.bind(this);
     this.onFileDroppedIn = this.onFileDroppedIn.bind(this);
     this.setLoadTimeout = this.setLoadTimeout.bind(this);
-    this.makeQuery = this.makeQuery.bind(this);
+    this.makeImgSearchQuery = this.makeImgSearchQuery.bind(this);
+    this.makeSubscribeMutation = this.makeSubscribeMutation.bind(this);
     this.verifyDesAndCopyright = this.verifyDesAndCopyright.bind(this);
     this.compressImage = this.compressImage.bind(this);
     this.uploadImage = this.uploadImage.bind(this);
@@ -44,14 +44,7 @@ class SearchPage extends Component {
   }
 
   componentDidMount() {
-    this.makeQuery();
-  }
-
-  onSearchTermChanged({ target: { value: searchTerm } }) {
-    this.setState(prevState => ({
-      ...prevState,
-      searchTerm,
-    }));
+    this.makeImgSearchQuery();
   }
 
   onUploadFileDesChanged({ target: { value: uploadFileDes } }) {
@@ -98,8 +91,8 @@ class SearchPage extends Component {
     }, AppConfig.LOAD_TIMEOUT);
   }
 
-  makeQuery() {
-    const { showInfo } = this.props;
+  makeImgSearchQuery(searchTerm) {
+    const { showInfo, user: { userID, sessionID } } = this.props;
     this.setState(prevState => ({
       ...prevState,
       appStatus: AppConfig.APP_STATUS.LOADING,
@@ -108,17 +101,60 @@ class SearchPage extends Component {
     ApolloClientManager.makeQuery(
       IMG_SEARCH_QUERY,
       {
-        searchTerm: this.state.searchTerm,
+        arg: {
+          userID,
+          sessionID,
+          searchTerm: searchTerm || '',
+        },
       },
-      ({ data: { imgSearch: stickerList } }) => {
-        this.setState(prevState => ({
-          ...prevState,
-          tileData: stickerList.map(({ stickerID, type, description }) => ({
-            img: `${AppConfig.SERVER_URL.HTTP}/imgs/${stickerID}.${type}`,
-            title: description,
-            cols: 1,
-          })),
-        }));
+      ({ data: { imgSearch: { success, message, searchResult } } }) => {
+        if (success) {
+          this.setState(prevState => ({
+            ...prevState,
+            tileData: searchResult.map(({ tagID, tagKey, stickers }) => ({
+              tagID,
+              tagKey,
+              imgGridData: stickers.map(({ stickerID, type, description }) => ({
+                img: `${AppConfig.SERVER_URL.HTTP}/imgs/${stickerID}.${type}`,
+                title: description,
+                cols: 1,
+              })),
+            })),
+          }));
+        } else {
+          showInfo(message, true);
+        }
+      },
+      (error) => {
+        console.error('Error:', error);
+        showInfo('網路連不上', true);
+      },
+    );
+  }
+
+  makeSubscribeMutation(tagID, callback = () => {}) {
+    const { showInfo, user: { userID, sessionID } } = this.props;
+    this.setState(prevState => ({
+      ...prevState,
+      appStatus: AppConfig.APP_STATUS.LOADING,
+    }));
+    this.setLoadTimeout(AppConfig.APP_STATUS.READY);
+    ApolloClientManager.makeMutation(
+      SUBSCRIBE_TAG_MUTATION,
+      {
+        arg: {
+          userID,
+          sessionID,
+          tagID,
+        },
+      },
+      ({ data: { subscribeTag: { success, message } } }) => {
+        if (success) {
+          showInfo('訂閱成功', false);
+          callback();
+        } else {
+          showInfo(message, true);
+        }
       },
       (error) => {
         console.error('Error:', error);
@@ -255,8 +291,8 @@ class SearchPage extends Component {
     return (
       <div className={'page-wrapper'}>
         <SearchBar
-          onChange={this.onSearchTermChanged}
-          onSubmit={this.makeQuery}
+          onSearch={this.makeImgSearchQuery}
+          onSubscribe={this.makeSubscribeMutation}
         />
         { appStatus === AppConfig.APP_STATUS.LOADING ? <LoadingOverlay /> : '' }
         {
@@ -270,13 +306,20 @@ class SearchPage extends Component {
             ''
         }
         <Dropzone onDrop={this.onFileDroppedIn}>
-          <ImageGridList
-            tileData={tileData}
-            onImageLoaded={this.onImageLoaded}
-          />
+          <div style={{ width: '600px', height: '620px', overflow: 'auto' }}>
+            {tileData.map(({ tagKey, imgGridData }) => (
+              <div style={{ width: '100%' }}>
+                <h3 style={{ marginLeft: '8px', color: '#666' }}>{`#${tagKey}`}</h3>
+                <ImageGridList
+                  tileData={imgGridData}
+                  onImageLoaded={this.onImageLoaded}
+                />
+              </div>
+            ))}
+          </div>
         </Dropzone>
         <div className="overlay overlay--breadcrumb">
-          <FloatingActionButton onClick={() => { onSwitchPage(AppConfig.PAGES.MY_BOX); }}>
+          <FloatingActionButton onClick={() => { onSwitchPage(AppConfig.PAGES.MY_BOX); }} tooltip="我的空間">
             <i className="fas fa-folder-open" />
           </FloatingActionButton>
         </div>

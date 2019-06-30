@@ -6,7 +6,7 @@ import uuid from 'uuid/v4';
 import { FloatingActionButton } from 'material-ui';
 import { Tabs, Tab } from 'material-ui/Tabs';
 import AppConfig from '../const/AppConfig.const';
-import OWN_STICKERS_QUERY from '../graphql/ownStickers.query.js';
+import OWN_STICKERS_AND_SUBSCRIBED_TAGS_QUERY from '../graphql/ownStickersAndSubscribedTags.query.js';
 import OWN_TAGS_QUERY from '../graphql/ownTags.query.js';
 import UPLOAD_STICKERS_MUTATION from '../graphql/uploadStickers.mutation';
 import verifyImageFile from '../util/verifyImageFile.func';
@@ -20,6 +20,12 @@ import EditStickerBtn from '../components/EditStickerBtn.component';
 import EditTagBtn from '../components/EditTagBtn.component';
 import UPDATE_STICKERS_MUTATION from '../graphql/updateSticker.mutation';
 import KICK_SUBSCRIBERS_MUTATION from '../graphql/kickSubscribers.mutation.js';
+import DELETE_TAG_MUTATION from '../graphql/deleteTag.mutation';
+import DELETE_STICKER_MUTATION from '../graphql/deleteSticker.mutation';
+import CREATE_TAG_MUTATION from '../graphql/createTag.mutation';
+import CANCEL_SUBSCRIBE_TAG_MUTATION from '../graphql/cancelSubscribeTag.mutation';
+import CreateTagBtn from '../components/CreateTagBtn.component';
+import EditSubscribedTagBtn from '../components/EditSubscribedTagBtn.component';
 
 const TABS = {
   OWNSTICKERS: 'OWNSTICKERS',
@@ -33,7 +39,8 @@ class MyBoxPage extends Component {
       appStatus: AppConfig.APP_STATUS.READY,
       uploadFileDes: '',
       tileData: [],
-      tagData: [],
+      ownTagData: [],
+      subscribedTagData: [],
       copyrightAgree: false,
       tab: TABS.OWNSTICKERS,
     };
@@ -49,17 +56,22 @@ class MyBoxPage extends Component {
     this.onCopyrightCheckboxChanged = this.onCopyrightCheckboxChanged.bind(this);
     this.onFileDroppedIn = this.onFileDroppedIn.bind(this);
     this.setLoadTimeout = this.setLoadTimeout.bind(this);
-    this.ownStickersQuery = this.ownStickersQuery.bind(this);
+    this.ownStickersAndSubscribedTagsQuery = this.ownStickersAndSubscribedTagsQuery.bind(this);
     this.verifyDesAndCopyright = this.verifyDesAndCopyright.bind(this);
     this.compressImage = this.compressImage.bind(this);
     this.uploadImage = this.uploadImage.bind(this);
     this.exitOverlay = this.exitOverlay.bind(this);
     this.handleTabChange = this.handleTabChange.bind(this);
     this.updateSticker = this.updateSticker.bind(this);
+    this.deleteSticker = this.deleteSticker.bind(this);
+    this.makeKickMutation = this.makeKickMutation.bind(this);
+    this.makeDeleteTagMutation = this.makeDeleteTagMutation.bind(this);
+    this.makeCreateTagMutation = this.makeCreateTagMutation.bind(this);
+    this.makeCancelSubscribeMutation = this.makeCancelSubscribeMutation.bind(this);
   }
 
   componentDidMount() {
-    this.ownStickersQuery();
+    this.ownStickersAndSubscribedTagsQuery();
   }
 
   onSwitchToOwnStickers() {
@@ -127,7 +139,7 @@ class MyBoxPage extends Component {
     }, AppConfig.LOAD_TIMEOUT);
   }
 
-  ownStickersQuery() {
+  ownStickersAndSubscribedTagsQuery() {
     const { showInfo, user: { userID } } = this.props;
     this.setState(prevState => ({
       ...prevState,
@@ -135,14 +147,15 @@ class MyBoxPage extends Component {
     }));
     this.setLoadTimeout(AppConfig.APP_STATUS.READY);
     ApolloClientManager.makeQuery(
-      OWN_STICKERS_QUERY,
+      OWN_STICKERS_AND_SUBSCRIBED_TAGS_QUERY,
       {
-        ownerID: userID,
+        userID,
       },
-      ({ data: { ownStickers: stickerList } }) => {
+      ({ data: { ownStickers: stickerList, subscribedTags: subscribedTagData } }) => {
         this.setState(prevState => ({
           ...prevState,
-          tileData: stickerList.map(({ stickerID, type, tagIDs, description }) => ({
+          subscribedTagData,
+          tileData: stickerList.map(({ stickerID, type, tags: stickerTags, description }) => ({
             img: `${AppConfig.SERVER_URL.HTTP}/imgs/${stickerID}.${type}`,
             title: description,
             cols: 1,
@@ -150,7 +163,9 @@ class MyBoxPage extends Component {
               <EditStickerBtn
                 stickerID={stickerID}
                 updateSticker={this.updateSticker}
-                tagIDs={tagIDs}
+                deleteSticker={this.deleteSticker}
+                stickerTags={stickerTags}
+                allTags={subscribedTagData}
                 description={description}
               />
             ),
@@ -189,6 +204,7 @@ class MyBoxPage extends Component {
       ({ data: { updateSticker: { success, message } } }) => {
         if (success) {
           showInfo('儲存成功', false);
+          this.ownStickersAndSubscribedTagsQuery();
           callback();
         } else {
           showInfo(message, true);
@@ -201,7 +217,34 @@ class MyBoxPage extends Component {
     );
   }
 
-  updateTag(tag, callback = () => {}) {
+  deleteSticker(stickerID, callback = () => {}) {
+    const { showInfo, user: { userID, sessionID } } = this.props;
+    ApolloClientManager.makeMutation(
+      DELETE_STICKER_MUTATION,
+      {
+        arg: {
+          userID,
+          sessionID,
+          stickerID,
+        },
+      },
+      ({ data: { deleteSticker: { success, message } } }) => {
+        if (success) {
+          showInfo('刪除成功', false);
+          this.ownStickersAndSubscribedTagsQuery();
+          callback();
+        } else {
+          showInfo(message, true);
+        }
+      },
+      (error) => {
+        console.error('Error:', error);
+        showInfo('網路連不上', true);
+      },
+    );
+  }
+
+  makeKickMutation(tag, callback = () => {}) {
     const { showInfo, user: { userID, sessionID } } = this.props;
     const { tagID, kickUserIDs } = tag;
     ApolloClientManager.makeMutation(
@@ -216,8 +259,91 @@ class MyBoxPage extends Component {
       },
       ({ data: { kickSubscribers: { success, message } } }) => {
         if (success) {
-          showInfo('用戶踢除成功', false);
+          showInfo('更新成功', false);
           callback();
+          this.ownTagsQuery();
+        } else {
+          showInfo(message, true);
+        }
+      },
+      (error) => {
+        console.error('Error:', error);
+        showInfo('網路連不上', true);
+      },
+    );
+  }
+
+  makeDeleteTagMutation(tagID, callback = () => {}) {
+    const { showInfo, user: { userID, sessionID } } = this.props;
+    ApolloClientManager.makeMutation(
+      DELETE_TAG_MUTATION,
+      {
+        arg: {
+          userID,
+          sessionID,
+          tagID,
+        },
+      },
+      ({ data: { deleteTag: { success, message } } }) => {
+        if (success) {
+          showInfo('更新成功', false);
+          callback();
+          this.ownTagsQuery();
+        } else {
+          showInfo(message, true);
+        }
+      },
+      (error) => {
+        console.error('Error:', error);
+        showInfo('網路連不上', true);
+      },
+    );
+  }
+
+  makeCreateTagMutation(key, callback = () => {}) {
+    const { showInfo, user: { userID, sessionID } } = this.props;
+    ApolloClientManager.makeMutation(
+      CREATE_TAG_MUTATION,
+      {
+        arg: {
+          userID,
+          sessionID,
+          tagID: uuid(),
+          key,
+        },
+      },
+      ({ data: { createTag: { success, message } } }) => {
+        if (success) {
+          showInfo('新增成功', false);
+          callback();
+          this.ownTagsQuery();
+        } else {
+          showInfo(message, true);
+        }
+      },
+      (error) => {
+        console.error('Error:', error);
+        showInfo('網路連不上', true);
+      },
+    );
+  }
+
+  makeCancelSubscribeMutation(tagID, callback = () => {}) {
+    const { showInfo, user: { userID, sessionID } } = this.props;
+    ApolloClientManager.makeMutation(
+      CANCEL_SUBSCRIBE_TAG_MUTATION,
+      {
+        arg: {
+          userID,
+          sessionID,
+          tagID,
+        },
+      },
+      ({ data: { cancelSubscribeTag: { success, message } } }) => {
+        if (success) {
+          showInfo('已取消訂閱', false);
+          callback();
+          this.ownStickersAndSubscribedTagsQuery();
         } else {
           showInfo(message, true);
         }
@@ -352,16 +478,16 @@ class MyBoxPage extends Component {
   }
 
   ownTagsQuery() {
-    const { user, showInfo } = this.props;
+    const { user: { userID }, showInfo } = this.props;
     ApolloClientManager.makeQuery(
       OWN_TAGS_QUERY,
       {
-        ownerID: user.userID,
+        ownerID: userID,
       },
-      ({ data: { ownTags: tagList } }) => {
+      ({ data: { ownTags: ownTagData } }) => {
         this.setState(prevState => ({
           ...prevState,
-          tagData: tagList,
+          ownTagData,
         }));
       },
       (error) => {
@@ -378,10 +504,11 @@ class MyBoxPage extends Component {
     if (value === TABS.OWNTAGS) {
       this.ownTagsQuery();
     }
+    this.ownStickersAndSubscribedTagsQuery();
   }
 
   render() {
-    const { appStatus, tileData, tagData } = this.state;
+    const { appStatus, tileData, ownTagData, subscribedTagData } = this.state;
     const { onSwitchPage } = this.props;
     return (
       <div className={'page-wrapper'}>
@@ -402,7 +529,7 @@ class MyBoxPage extends Component {
           onChange={this.handleTabChange}
         >
           <Tab
-            label="My stickers"
+            label="我的貼圖"
             value={TABS.OWNSTICKERS}
           >
             <Dropzone onDrop={this.onFileDroppedIn}>
@@ -414,22 +541,39 @@ class MyBoxPage extends Component {
           </Tab>
           <Tab
             className={'page-tab'}
-            label="My tags"
+            label="我的標籤"
             value={TABS.OWNTAGS}
           >
-            {tagData.map(({ tagID, key, subscriberIDs }) => (
+            <h3 style={{ marginLeft: '8px' }}>我管理的標籤</h3>
+            {ownTagData.map(({ tagID, key, subscriberIDs }) => (
               <EditTagBtn
                 tagID={tagID}
                 key={tagID}
                 tagKey={key}
                 subscriberIDs={subscriberIDs}
-                updateTag={this.updateTag}
+                makeKickMutation={this.makeKickMutation}
+                makeDeleteTagMutation={this.makeDeleteTagMutation}
+              />
+            ))}
+            {(
+              <CreateTagBtn
+                makeCreateTagMutation={this.makeCreateTagMutation}
+              />
+            )}
+            <h3 style={{ marginLeft: '8px' }}>我訂閱的標籤</h3>
+            {subscribedTagData.map(({ tagID, ownerID, key }) => (
+              <EditSubscribedTagBtn
+                tagID={tagID}
+                key={tagID}
+                ownerID={ownerID}
+                tagKey={key}
+                makeCancelSubscribeMutation={this.makeCancelSubscribeMutation}
               />
             ))}
           </Tab>
         </Tabs>
         <div className="overlay overlay--breadcrumb">
-          <FloatingActionButton onClick={() => { onSwitchPage(AppConfig.PAGES.SEARCH); }}>
+          <FloatingActionButton onClick={() => { onSwitchPage(AppConfig.PAGES.SEARCH); }} tooltip="搜尋頁">
             <i className="fas fa-search" />
           </FloatingActionButton>
         </div>
