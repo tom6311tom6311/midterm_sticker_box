@@ -5,7 +5,7 @@ import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 import FlatButton from 'material-ui/FlatButton';
 import AppConfig from '../const/AppConfig.const';
-import REGISTER_MUTATION from '../graphql/login.mutation.js';
+import REGISTER_MUTATION from '../graphql/register.mutation.js';
 import ApolloClientManager from '../util/ApolloClientManager.class';
 import InfoBand from '../components/InfoBand.component';
 
@@ -94,14 +94,16 @@ class RegisterPage extends Component {
             password,
           },
         },
-        ({ data: { register: { success, message } } }) => {
+        ({ data: { register: { success, message, sessionID } } }) => {
           if (success) {
             showInfo('註冊成功，直接登入', false);
-            const { onLoginSuccess } = this.props;
+            const { onLoginSuccess, onSwitchPage } = this.props;
             onLoginSuccess({
               name,
               userID,
+              sessionID,
             });
+            onSwitchPage(AppConfig.PAGES.SEARCH);
           } else {
             showInfo(message, true);
           }
