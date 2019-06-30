@@ -162,7 +162,7 @@ class RegisterPage extends Component {
             onChange={this.onNameChanged}
           />
           <div className="overlay--button-wrapper">
-            <RaisedButton size={'large'} onClick={this.onClickLoginButton}>
+            <RaisedButton size={'large'} onClick={this.onClickRegisterButton}>
               註冊
             </RaisedButton>
           </div>
