@@ -16,6 +16,11 @@ const createWindow = async () => {
     width: 600,
     height: 750,
     resizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      enableRemoteModule: true,
+    },
   });
 
   mainWindow.setMenu(null);
